@@ -225,8 +225,8 @@ def main():
                     gray  = (red + green + blue) / 3
                     #print('r='+str(red)+' g='+str(green)+' b='+str(blue))
                     
-        if j==0:  
-            camera1.saveImage("testZomb.jpg", 90) #obtain a test img of scene
+        """if j==0:  
+            camera1.saveImage("testZomb.jpg", 90)""" #obtain a test img of scene
         
         # print(lidar.getRangeImage())
         """while receiver.getQueueLength() > 0:
