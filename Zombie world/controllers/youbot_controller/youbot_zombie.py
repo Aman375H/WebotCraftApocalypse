@@ -62,6 +62,7 @@ def berry_collision(berry_id, robot_info, supervisor):
         randomNum = random.randint(1,4)
         
         if(randomNum == 4):
+            #use berrie's secondary power
             secondary == True
         
         if(not secondary):
@@ -161,16 +162,19 @@ def check_berry_collision(robot_info, robot_x, robot_z, supervisor):
     
     
 def update_robot(robot_info):
-    
-    if (robot_info[2] >0):
+    #if armour enabled, decrement it by 1
+    if (robot_info[2] > 0):
         robot_info[2] -= 1  
     
+    #if you have zero energy, will lose 1 health every 2 sec
     if (robot_info[1] == 0):
         robot_info[0] -= 1
     
+    #lose one energy every 2 sec, but energy can't go negative
     if(robot_info[1] > 0): 
         robot_info[1] -= 1
         
+    #print robot stats
     print_health_energy(robot_info)
     
     return robot_info
