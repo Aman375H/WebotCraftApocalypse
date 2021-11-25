@@ -11,7 +11,7 @@ from zomb_detection import *
 #--------------------------END TESTING IMPORTS----------------------------------------------
 
 import numpy as np
-import cv2
+#import cv2
 
    
 #------------------CHANGE CODE BELOW HERE ONLY--------------------------
@@ -225,8 +225,10 @@ def main():
                     gray  = (red + green + blue) / 3
                     #print('r='+str(red)+' g='+str(green)+' b='+str(blue))
                     
-        """if j==0:  
-            camera1.saveImage("testZomb.jpg", 90)""" #obtain a test img of scene
+        if j == 0:  
+            #obtain a test img of scene
+            camera1.saveImage("testZomb9.jpg", 90)
+             
         
         # print(lidar.getRangeImage())
         """while receiver.getQueueLength() > 0:

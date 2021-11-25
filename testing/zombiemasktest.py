@@ -75,78 +75,58 @@ def find_zomb_on_img(image, color):
     winning_yval = 100000
     winning_xval = 0
 
-    #initialize x and y disp to 0
-    #**NOTE: if we can't detect square in this frame, [0, 0] WILL BE RETURNED, THROWING DATA OFF
-    xDisp = 0
-    yDisp = 0
-
-    num_of_conts_in_frame_that_satisy_dims = 0
-
     #print(len(cnts), "contours found in frame")
 
-    # loop over the contours
-    for c in cnts:
-        #print("Contour found")
+    # multiply the contour (x, y)-coordinates by the resize ratio,
+    # then draw the contours and the name of the shape on the image
+    largestCont = largestCont.astype("float")
 
-        #compute the "centers of mass" of each contour in the image
-        M = cv2.moments(c)
+    #placeholder to keep track of top left and bottom rt pts
+    top_left = []
+    top_left_sum = 1000000
+    btm_rt = []
+    btm_rt_sum = 0
 
-        compute_com_success = True
+    #find corresponding max y val for that x val
+    for i in range(0, largestCont.shape[0]): #iterate over all points in contour
+        this_x = largestCont[i, :, 0]
+        this_y = largestCont[i, :, 1]
 
-        # make sure not div by 0
-        if (M["m00"] != 0):
-            cX = int((M["m10"] / M["m00"]) * scale_percent / 100)
-            cY = int((M["m01"] / M["m00"]) * scale_percent / 100)
-        else:
-            compute_com_success = False
+        xysum = this_x + this_y #sum x and y vals of pt
 
-        # multiply the contour (x, y)-coordinates by the resize ratio,
-        # then draw the contours and the name of the shape on the image
-        c = c.astype("float")
+        #checking sum of x and y vals
+        if xysum > btm_rt_sum: #find bottom rt pt
+            btm_rt_sum = xysum
+            btm_rt = np.array([this_x, this_y])
 
-        #print(c)
-        #print("Length of this cntr is", c.size / 2)
+        if xysum < top_left_sum: #find top left pt
+            top_left_sum = xysum
+            top_left = np.array([this_x, this_y])
+            
+    #print("Top left is", top_left, "bottom rt is", btm_rt)
 
-        #placeholder to keep track of top left and bottom rt pts
-        top_left = []
-        top_left_sum = 1000000
-        btm_rt = []
-        btm_rt_sum = 0
+    #compute approximate pixel dimensions of the zombie
+    width = btm_rt[0] - top_left[0]
+    height = btm_rt[1] - top_left[1]
 
-        #find corresponding max y val for that x val
-        for i in range(0, c.shape[0]): #iterate over all points in contour
-            this_x = c[i, :, 0]
-            this_y = c[i, :, 1]
+    print("Zombie pixel width is ", width[0].astype("int"), ", pixel ht is ", height[0].astype("int"))
 
-            xysum = this_x + this_y
-
-            #iterate over all points in contour checking sum of x and y vals
-            if xysum > btm_rt_sum:
-                btm_rt_sum = xysum
-                btm_rt = np.array([this_x, this_y])
-
-            if xysum < top_left_sum:
-                top_left_sum = xysum
-                top_left = np.array([this_x, this_y])
-                
-        #print("Top left is", top_left, "bottom rt is", btm_rt)
-
-        #if top left or btm rt couldn't be found, jump to next contour
-        if btm_rt.size == 0 or top_left.size == 0:
-            #print("An extraneous rect or square was found in a frame/img, because btm_rt or top_left is []")
-            continue
-
-        #otherwise we can successfully compute pixel dimensions of the zombie
-        width = btm_rt[0] - top_left[0]
-        height = btm_rt[1] - top_left[1]
-        dimsum = width + height
-
+    dimsum = width + height
 
     #print(num_of_conts_in_frame_that_satisy_dims, "satisfying square contours found in frame")
 
-    #if we specified to show all the contours, draw all
+    #draw zombie contour
+    largestCont[:, :, 0] = largestCont[:, :, 0] * scale_percent / 100
+    largestCont[:, :, 1] = largestCont[:, :, 1] * scale_percent / 100
+
+    largestCont = largestCont.astype("int")
+
+    #draw the contour in green on original cropped color image
+    cv2.drawContours(resized_og, [largestCont], -1, CONT_COL_GREEN, 2)
+
+    #if we specified to show all the contours, draw all rest of cnts
     if SHOW_ALL_CONTS:
-        for c in cnts:
+        for c in cnts[1:len(cnts)]:
             c[:, :, 0] = c[:, :, 0] * scale_percent / 100
             c[:, :, 1] = c[:, :, 1] * scale_percent / 100
 
@@ -155,23 +135,11 @@ def find_zomb_on_img(image, color):
             #draw the contour in green on original cropped color image
             cv2.drawContours(resized_og, [c], -1, CONT_COL_GREEN, 2)
 
-    else:
-        #just draw zombie contour
-        largestCont[:, :, 0] = largestCont[:, :, 0] * scale_percent / 100
-        largestCont[:, :, 1] = largestCont[:, :, 1] * scale_percent / 100
-
-        largestCont = largestCont.astype("int")
-
-        #draw the contour in green on original cropped color image
-        cv2.drawContours(resized_og, [largestCont], -1, CONT_COL_GREEN, 2)
-
-
-    cv2.imshow("Processed image", resized_mask)
-
-    # show the output image
-    cv2.imshow("Original image", resized_og)
-    cv2.imshow("HSV image", resized_hsv)
-
+    #display HSV, binary, and original img with contours drawn
+    cv2.imshow("HSV image - Q to quit", resized_hsv)
+    cv2.imshow("Processed image - Q to quit", resized_mask)
+    cv2.imshow("Original image - Q to quit", resized_og)
+    
     #wait indefinitely for a key press
     k = cv2.waitKey(0)
 
