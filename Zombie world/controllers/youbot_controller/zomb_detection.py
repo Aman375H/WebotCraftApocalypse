@@ -20,9 +20,10 @@ CV_PURPLE_HSV = np.array([270, 80, 100])
 LOWER_AQUA_HSV = np.array([157, 84, 76])
 UPPER_AQUA_HSV = np.array([180, 100, 100])
 
-class ShapeDetector:
+#class ShapeDetector:
     #TBD
-            
+  
+"""          
 def find_zomb_on_img(image, color):
     #converts the BGR color space of image to HSV color space
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -31,4 +32,4 @@ def find_zomb_on_img(image, color):
     mask = cv2.inRange(hsv, LOWER_AQUA_HSV, UPPER_AQUA_HSV)
     cv2.imshow("Processed image", mask)
     
-    #Testing in progress outside of webots
+    #Testing in progress outside of webots"""
