@@ -32,32 +32,97 @@ def base_set_wheel_speeds_helper(speeds):
         base_set_wheel_velocity(wheels[i], speeds[i])
        
 def base_reset():
-  speeds = [0.0, 0.0, 0.0, 0.0];
-  base_set_wheel_speeds_helper(speeds);
+    speeds = [0.0, 0.0, 0.0, 0.0];
+    base_set_wheel_speeds_helper(speeds);
  
 def base_forwards():
-  speeds = [SPEED, SPEED, SPEED, SPEED]
-  base_set_wheel_speeds_helper(speeds)
+    speeds = [SPEED, SPEED, SPEED, SPEED]
+    base_set_wheel_speeds_helper(speeds)
 
 def base_backwards():
-  speeds = [-SPEED, -SPEED, -SPEED, -SPEED]
-  base_set_wheel_speeds_helper(speeds)
+    speeds = [-SPEED, -SPEED, -SPEED, -SPEED]
+    base_set_wheel_speeds_helper(speeds)
 
 def base_turn_left():
-  speeds = [-SPEED, SPEED, -SPEED, SPEED]
-  base_set_wheel_speeds_helper(speeds)
+    speeds = [SPEED, -SPEED, SPEED, -SPEED]
+    base_set_wheel_speeds_helper(speeds)
 
 def base_turn_right():
-  speeds = [SPEED, -SPEED, SPEED, -SPEED]
-  base_set_wheel_speeds_helper(speeds)
+    speeds = [-SPEED, SPEED, -SPEED, SPEED]
+    base_set_wheel_speeds_helper(speeds)
 
 def base_strafe_left():
-  speeds = [SPEED, -SPEED, -SPEED, SPEED]
-  base_set_wheel_speeds_helper(speeds)
+    speeds = [SPEED, -SPEED, -SPEED, SPEED]
+    base_set_wheel_speeds_helper(speeds)
 
 def base_strafe_right():
-  speeds = [-SPEED, SPEED, SPEED, -SPEED]
-  base_set_wheel_speeds_helper(speeds)
+    speeds = [-SPEED, SPEED, SPEED, -SPEED]
+    base_set_wheel_speeds_helper(speeds)
+    
+def base_tilt_left(tilt_factor):
+    speeds = [SPEED, SPEED*(1-tilt_factor), SPEED, SPEED*(1-tilt_factor)]
+    base_set_wheel_speeds_helper(speeds)
+    
+def base_tilt_right(tilt_factor):
+    speeds = [SPEED*(1-tilt_factor), SPEED, SPEED*(1-tilt_factor), SPEED]
+    base_set_wheel_speeds_helper(speeds)
+
+##### higher level behaviors as finite state machines #####
+
+# wander behavior when nothing interesting is spotted
+class wander():
+    def __init__(self):
+        self.state = 0
+    def output(self, i):
+        if i % 16 == 0:
+            self.state = 1 - self.state
+        # survey
+        if self.state == 0:
+            base_turn_left()
+        # march forwards
+        elif self.state == 1:
+            base_forwards()
+    
+# turn away from walls when they take up too much of robot view      
+class avoid_walls():
+    def __init__(self):
+        self.state = 0
+    # TODO
+    def output(self, i):
+        return 0;
+
+# seek berries when they are in view, else this behavior
+# does nothing
+class seek_berries():
+    def __init__(self):
+        self.state = 0
+    # TODO
+    def output(self, i):
+        return 0
+        
+# avoid zombies if they are in view, else this behavior
+# does nothing
+class avoid_zombies():
+    def __init__(self):
+        self.state = 0
+    # TODO
+    def output(self, i):
+        return 0
+
+##### end of higher level behaviors #####
+
+# dictionary of higher level behaviors
+behaviors = {
+    "wander": wander(),
+    "avoid walls": avoid_walls(),
+    "seek berries": seek_berries(),
+    "avoid zombies": avoid_zombies(),
+}
+
+# set of good berries
+# update this list as berries are obtained and effects are known
+# if berry is not on this list, it is bad
+good_berries = set(["orange", "red", "yellow", "pink"])
 
 #------------------CHANGE CODE ABOVE HERE ONLY--------------------------
 
@@ -139,10 +204,10 @@ def main():
     bl = robot.getDevice("wheel4")
     
     
-    #fr.setPosition(float('inf'))
-    #fl.setPosition(float('inf'))
-    #br.setPosition(float('inf'))
-    #bl.setPosition(float('inf'))
+    # fr.setPosition(float('inf'))
+    # fl.setPosition(float('inf'))
+    # br.setPosition(float('inf'))
+    # bl.setPosition(float('inf'))
     
     wheels.extend([fr, fl, br, bl])
     
@@ -188,52 +253,44 @@ def main():
         
      #------------------CHANGE CODE BELOW HERE ONLY--------------------------   
          #called every timestep
-         #move fwd some, then do 90 degree left turn
+         
+        i += 0.5
 
-        if i < 50:
-            base_forwards()
-        
-        if i == 50:
-            base_reset() 
-            base_turn_left()  
-                 
-        if i == 55:
-            i = 0
-        
-        i += 1
-        
+        if behaviors['avoid zombies'].output(i):
+            continue
+        elif behaviors['seek berries'].output(i):
+            continue
+        elif behaviors['avoid walls'].output(i):
+            continue
+        else:
+            behaviors['wander'].output(i)
         
         #camera stuff
         
         #get image as nested list
-        image = camera1.getImageArray()
+        # image = camera1.getImageArray()
         
-        #wrapper to C
-        imageRaw = camera1.getImage()
+        # #wrapper to C
+        # imageRaw = camera1.getImage()
         
-        #convert nested list to 3D numpy array, ready to be input to OpenCV
-        npimg = np.array(image) #shape of array should be (128, 64, 3) (128x64 pix, 3 color chan)
+        # #convert nested list to 3D numpy array, ready to be input to OpenCV
+        # npimg = np.array(image) #shape of array should be (128, 64, 3) (128x64 pix, 3 color chan)
         
-        #if img came back non-null
-        if image:
-            #example of how to get RGB components of each pixel
-            for x in range(0, camera1.getWidth()):
-                for y in range(0, camera1.getHeight()):
-                    red   = image[x][y][0]
-                    green = image[x][y][1]
-                    blue  = image[x][y][2]
-                    gray  = (red + green + blue) / 3
-                    #print('r='+str(red)+' g='+str(green)+' b='+str(blue))
+        # #if img came back non-null
+        # if image:
+            # #example of how to get RGB components of each pixel
+            # for x in range(0, camera1.getWidth()):
+                # for y in range(0, camera1.getHeight()):
+                    # red   = image[x][y][0]
+                    # green = image[x][y][1]
+                    # blue  = image[x][y][2]
+                    # gray  = (red + green + blue) / 3
+                    # #print('r='+str(red)+' g='+str(green)+' b='+str(blue))
                     
-        if j == 0:  
-            #obtain a test img of scene
-            camera1.saveImage("testZomb9.jpg", 90)
+        # if j == 0:  
+            # #obtain a test img of scene
+            # camera1.saveImage("testZomb9.jpg", 90)
              
-        
-        # print(lidar.getRangeImage())
-        """while receiver.getQueueLength() > 0:
-            print(receiver.getData())
-            receiver.nextPacket()"""
         
         #make decisions using inputs if you choose to do so
          
