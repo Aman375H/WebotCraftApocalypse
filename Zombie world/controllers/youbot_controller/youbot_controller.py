@@ -11,7 +11,7 @@ from zomb_detection import *
 #--------------------------END TESTING IMPORTS----------------------------------------------
 
 import numpy as np
-#import cv2
+import cv2
 
    
 #------------------CHANGE CODE BELOW HERE ONLY--------------------------
@@ -263,7 +263,7 @@ def main():
         elif behaviors['avoid walls'].output(i):
             continue
         else:
-            behaviors['wander'].output(i)
+            #behaviors['wander'].output(i)
         
         #camera stuff
         
@@ -289,7 +289,7 @@ def main():
                     
         # if j == 0:  
             # #obtain a test img of scene
-            # camera1.saveImage("testZomb9.jpg", 90)
+            #camera1.saveImage("testZombCalibrate_.jpg", 90)
              
         
         #make decisions using inputs if you choose to do so

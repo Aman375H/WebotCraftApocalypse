@@ -1,5 +1,5 @@
 import numpy as np
-#import cv2
+import cv2
 
 
 WEBOTS_AQUA = np.array([0, 0.9, 0.7])
