@@ -82,14 +82,16 @@ WEBOTS_WHITE = np.array([1, 1, 1])
 CV_WHITE_RGB = np.multiply(WEBOTS_WHITE, 255) 
 
 #shaded_wall
-LOWER_WHITE_HSV = np.array([100, 0, 0])
-UPPER_WHITE_HSV = np.array([115, 70, 100])
+LOWER_WHITE_HSV = np.array([0, 0, 0]) #100, 0, 0
+UPPER_WHITE_HSV = np.array([190, 40, 100]) #115, 70, 100
 SHADED_WALL_COLOR = [LOWER_WHITE_HSV, UPPER_WHITE_HSV]
 
 #sunny wall
 LOWER_WHITE2_HSV = np.array([0, 0, 150])
 UPPER_WHITE2_HSV = np.array([255, 20, 255])
 SUNNY_WALL_COLOR = [LOWER_WHITE2_HSV, UPPER_WHITE2_HSV]
+
+
 
 #filter bank
 filter_bank = {"aqua_zomb": AQUA_ZOMB_COLOR, "blue_zomb": BLUE_ZOMB_COLOR, "purp_zomb": PURPLE_ZOMB_COLOR, "green_zomb": GREEN_ZOMB_COLOR, "yellow_berr": YELLOW_BERR_COLOR, "orng_berr": ORANGE_BERR_COLOR, "pink_berr": PINK_BERR_COLOR, "red_berr": [RED_BERR_COLOR, RED2_BERR_COLOR], "wall" : [SHADED_WALL_COLOR, SUNNY_WALL_COLOR]}

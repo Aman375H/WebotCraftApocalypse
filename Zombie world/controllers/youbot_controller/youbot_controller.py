@@ -305,6 +305,7 @@ def main():
         
         #wrapper to C
         imageRaw = camera1.getImage()
+        camera1.saveImage("/home/nodog/WebotCraftApocalypse/testing/img/shortWall.jpg", 90)
         image = np.frombuffer(imageRaw, np.uint8).reshape((camera1.getHeight(), camera1.getWidth(), 4))
 
         elements = find_elements_on_img(image)
@@ -322,7 +323,7 @@ def main():
                     berries.append(element)
                     
         #make decisions using inputs if you choose to do so
-        
+        """
         if behaviors['avoid zombies'].output(i, []):
             continue
         elif behaviors['seek berries'].output(i, berries):
@@ -338,7 +339,7 @@ def main():
             behaviors['wander'].output(i)
          
         previous_stats = robot_info.copy()
-        previous_berry = current_berry[:]
+        previous_berry = current_berry[:]"""
         
         #------------------CHANGE CODE ABOVE HERE ONLY--------------------------
         

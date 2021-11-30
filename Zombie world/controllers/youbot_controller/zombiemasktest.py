@@ -83,8 +83,8 @@ WEBOTS_WHITE = np.array([1, 1, 1])
 CV_WHITE_RGB = np.multiply(WEBOTS_WHITE, 255) 
 
 #shaded_wall
-LOWER_WHITE_HSV = np.array([100, 0, 0])
-UPPER_WHITE_HSV = np.array([115, 70, 100])
+LOWER_WHITE_HSV = np.array([0, 0, 0])
+UPPER_WHITE_HSV = np.array([190, 40, 100])
 SHADED_WALL_COLOR = [LOWER_WHITE_HSV, UPPER_WHITE_HSV]
 
 #sunny wall
