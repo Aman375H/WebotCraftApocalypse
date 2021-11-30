@@ -27,10 +27,115 @@ current_berry = ""
 wheels = []
 
 # arm globals
-arm_elements = [];
+ARM_FRONT_FLOOR=0
+ARM_FRONT_PLATE=1
+ARM_FRONT_CARDBOARD_BOX=2
+ARM_RESET=3
+ARM_BACK_PLATE_HIGH=4
+ARM_BACK_PLATE_LOW=5
+ARM_HANOI_PREPARE=6
+ARM_BACK_LEFT=7
+ARM_LEFT=8
+ARM_FRONT_LEFT=9
+ARM_FRONT=10
+ARM_FRONT_RIGHT=11
+ARM_RIGHT=12
+ARM_BACK_RIGHT=13
+ARM1=0
+ARM2=1
+ARM3=2
+ARM4=3
+ARM5=4
 
-current_height = ARM_RESET;
-current_orientation = ARM_FRONT;
+arm_elements = [None, None, None, None, None]
+
+current_height = ARM_RESET
+current_orientation = ARM_FRONT
+
+def arm_init(robot):
+    arm_elements[ARM1] = robot.getDevice("arm1")
+    arm_elements[ARM2] = robot.getDevice("arm2")
+    arm_elements[ARM3] = robot.getDevice("arm3")
+    arm_elements[ARM4] = robot.getDevice("arm4")
+    arm_elements[ARM5] = robot.getDevice("arm5")
+
+    arm_elements[ARM2].setVelocity(0.5);
+
+    arm_set_height(ARM_RESET);
+    arm_set_orientation(ARM_FRONT);
+
+def arm_reset():
+    arm_elements[ARM1].setPosition(0.0)
+    arm_elements[ARM2].setPosition(1.57)
+    arm_elements[ARM3].setPosition(-2.635)
+    arm_elements[ARM4].setPosition(1.78)
+    arm_elements[ARM5].setPosition(0.0)
+
+def arm_set_height(height):
+    if height == ARM_FRONT_FLOOR:
+        arm_elements[ARM2].setPosition(-0.97)
+        arm_elements[ARM3].setPosition(-1.55)
+        arm_elements[ARM4].setPosition(-0.61)
+        arm_elements[ARM5].setPosition(0.0)
+    elif height == ARM_FRONT_PLATE:
+        arm_elements[ARM2].setPosition(-0.62)
+        arm_elements[ARM3].setPosition(-0.98)
+        arm_elements[ARM4].setPosition(-1.53)
+        arm_elements[ARM5].setPosition(0.0)
+    elif height == ARM_FRONT_CARDBOARD_BOX:
+        arm_elements[ARM2].setPosition(0.0)
+        arm_elements[ARM3].setPosition(-0.77)
+        arm_elements[ARM4].setPosition(-1.21)
+        arm_elements[ARM5].setPosition(0.0)
+    elif height == ARM_RESET:
+        arm_elements[ARM2].setPosition(1.57)
+        arm_elements[ARM3].setPosition(-2.635)
+        arm_elements[ARM4].setPosition(1.78)
+        arm_elements[ARM5].setPosition(0.0)
+    elif height == ARM_BACK_PLATE_HIGH:
+        arm_elements[ARM2].setPosition(0.678)
+        arm_elements[ARM3].setPosition(0.682)
+        arm_elements[ARM4].setPosition(1.74)
+        arm_elements[ARM5].setPosition(0.0)
+    elif height == ARM_BACK_PLATE_LOW:
+        arm_elements[ARM2].setPosition(0.92)
+        arm_elements[ARM3].setPosition(0.42)
+        arm_elements[ARM4].setPosition(1.78)
+        arm_elements[ARM5].setPosition(0.0)
+    elif height == ARM_HANOI_PREPARE:
+        arm_elements[ARM2].setPosition(-0.4)
+        arm_elements[ARM3].setPosition(-1.2)
+        arm_elements[ARM4].setPosition(-np.pi/2)
+        arm_elements[ARM5].setPosition(np.pi/2)
+    else:
+        print("arm_height() called with a wrong argument")
+        return
+
+    current_height = height
+
+def arm_set_orientation(orientation):
+    if orientation == ARM_BACK_LEFT:
+        arm_elements[ARM1].setPosition(-2.949)
+    elif orientation == ARM_LEFT:
+        arm_elements[ARM1].setPosition(-np.pi/2)
+    elif orientation == ARM_FRONT_LEFT:
+        arm_elements[ARM1].setPosition(-0.2)
+    elif orientation == ARM_FRONT:
+        arm_elements[ARM1].setPosition(0.0)
+    elif orientation == ARM_FRONT_RIGHT:
+        arm_elements[ARM1].setPosition(0.2)
+    elif orientation == ARM_RIGHT:
+        arm_elements[ARM1].setPosition(np.pi/2)
+    elif orientation == ARM_BACK_RIGHT:
+        arm_elements[ARM1].setPosition(2.949)
+    else:
+      print("arm_set_side() called with a wrong argument\n")
+      return
+    current_orientation = orientation
+
+def arm_set_sub_arm_rotation(arm, radian):
+    arm_elements[arm].setPosition(radian)
+
 
 #kinematics functions, translated to Python
 def base_set_wheel_velocity(t, velocity):
@@ -84,29 +189,32 @@ def base_tilt_right(tilt_factor):
 class wander():
     def __init__(self):
         self.state = 0
-    def output(self, i):
-        if i % 16 == 0:
-            self.state = 1 - self.state
-        # survey
-        if self.state == 0:
-            base_turn_right()
-        # march forwards
-        elif self.state == 1:
+        self.wall_threshold = 1000
+    def output(self, i, walls):
+        # if nothing is in view, wander in circles, searching
+        if len(walls) == 0:
+            if i % 16 == 0:
+                self.state = 1 - self.state
+            # survey
+            if self.state == 0:
+                base_turn_right()
+            # march forwards
+            elif self.state == 1:
+                base_forwards()
+            return
+            
+        sorted_walls = sorted(berries, key=lambda x: x.width*x.height, reverse=True)
+        target_wall = sorted_walls[0]
+        
+        if target_wall.width*target_wall.height > THRESHOLD:
+            base_turn_right
+        else:
             base_forwards()
-    
-# turn away from walls when they take up too much of robot view      
-class avoid_walls():
-    def __init__(self):
-        self.state = 0
-    # TODO
-    def output(self, i):
-        return 0
 
 # seek berries when they are in view, else this behavior
 # does nothing
 class seek_berries():
     def __init__(self):
-        self.state = 0
         self.k_p = 0.5
         self.k_d = 0.2
         
@@ -137,9 +245,7 @@ class seek_berries():
         
         current_berry = target_berry.name[:-5]
         
-        return 1
-        
-          
+        return 1 
         
 # avoid zombies if they are in view, else this behavior
 # does nothing
@@ -157,7 +263,6 @@ class avoid_zombies():
 # dictionary of higher level behaviors
 behaviors = {
     "wander": wander(),
-    "avoid walls": avoid_walls(),
     "seek berries": seek_berries(),
     "avoid zombies": avoid_zombies(),
 }
@@ -253,7 +358,8 @@ def main():
     # bl.setPosition(float('inf'))
     
     wheels.extend([fr, fl, br, bl])
-    
+    arm_init(robot)
+    arm_set_height(ARM_HANOI_PREPARE)
     
     i = 0
     j = 0
@@ -312,6 +418,8 @@ def main():
         
         berries = []
         zombies = []
+        walls = []
+        stumps = []
         
         for element in elements:
             if element.name[-4:] == "zomb":
@@ -321,6 +429,10 @@ def main():
                     zombies.append(element)
                 else:
                     berries.append(element)
+            elif element.name == "wall":
+                walls.append(element)
+            elif element.name == "stump":
+                stumps.append(element)    
                     
         #make decisions using inputs if you choose to do so
         
@@ -333,10 +445,8 @@ def main():
                 good_berries.remove(previous_berry)
                 print(good_berries)
             continue
-        elif behaviors['avoid walls'].output(i):
-            continue
         else:
-            behaviors['wander'].output(i)
+            behaviors['wander'].output(i, walls)
          
         previous_stats = robot_info.copy()
         previous_berry = current_berry[:]
