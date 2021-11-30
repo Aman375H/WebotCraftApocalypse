@@ -136,7 +136,6 @@ def arm_set_orientation(orientation):
 def arm_set_sub_arm_rotation(arm, radian):
     arm_elements[arm].setPosition(radian)
 
-
 #kinematics functions, translated to Python
 def base_set_wheel_velocity(t, velocity):
     t.setPosition(INFINITY)
