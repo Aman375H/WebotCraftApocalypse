@@ -29,8 +29,8 @@ wheels = []
 # arm globals
 arm_elements = [];
 
-current_height = ARM_RESET;
-current_orientation = ARM_FRONT;
+#current_height = ARM_RESET;
+#current_orientation = ARM_FRONT;
 
 #kinematics functions, translated to Python
 def base_set_wheel_velocity(t, velocity):
@@ -140,7 +140,6 @@ class seek_berries():
         return 1
         
           
-        
 # avoid zombies if they are in view, else this behavior
 # does nothing
 class avoid_zombies():
