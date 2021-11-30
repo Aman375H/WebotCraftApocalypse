@@ -51,7 +51,7 @@ RectangleArena {
 }
 DEF Youbot Youbot {
   translation 2.4908 0.0704558 2.63862
-  rotation -0.5775421927813059 0.5791401933147122 0.5753621920536304 2.08894
+  rotation 0.9835284427860799 -0.1308670589165595 -0.12468205613206133 -1.5868653071795862
   controller "youbot_controller"
   supervisor TRUE
   bodySlot [

@@ -8,32 +8,42 @@ from youbot_zombie import *
 
 #--------------------------TESTING IMPORTS ONLY--CHANGE FOR SUBMISSION--------------------------
 from zomb_detection import *
+from zombiemasktest import *
 #--------------------------END TESTING IMPORTS----------------------------------------------
 
 import numpy as np
 import cv2
 
-   
 #------------------CHANGE CODE BELOW HERE ONLY--------------------------
 #define functions here for making decisions and using sensor inputs
-    
+
+
+# movement globals
 SPEED = 14
 INFINITY = float('inf')
+IMG_X_CENTER = 64
+current_berry = ""
 
 wheels = []
 
+# arm globals
+arm_elements = [];
+
+current_height = ARM_RESET;
+current_orientation = ARM_FRONT;
+
 #kinematics functions, translated to Python
 def base_set_wheel_velocity(t, velocity):
-    t.setPosition(INFINITY);
-    t.setVelocity(velocity);
+    t.setPosition(INFINITY)
+    t.setVelocity(velocity)
 
 def base_set_wheel_speeds_helper(speeds):
     for i in range(4):
         base_set_wheel_velocity(wheels[i], speeds[i])
        
 def base_reset():
-    speeds = [0.0, 0.0, 0.0, 0.0];
-    base_set_wheel_speeds_helper(speeds);
+    speeds = [0.0, 0.0, 0.0, 0.0]
+    base_set_wheel_speeds_helper(speeds)
  
 def base_forwards():
     speeds = [SPEED, SPEED, SPEED, SPEED]
@@ -67,6 +77,7 @@ def base_tilt_right(tilt_factor):
     speeds = [SPEED*(1-tilt_factor), SPEED, SPEED*(1-tilt_factor), SPEED]
     base_set_wheel_speeds_helper(speeds)
 
+
 ##### higher level behaviors as finite state machines #####
 
 # wander behavior when nothing interesting is spotted
@@ -78,7 +89,7 @@ class wander():
             self.state = 1 - self.state
         # survey
         if self.state == 0:
-            base_turn_left()
+            base_turn_right()
         # march forwards
         elif self.state == 1:
             base_forwards()
@@ -89,16 +100,46 @@ class avoid_walls():
         self.state = 0
     # TODO
     def output(self, i):
-        return 0;
+        return 0
 
 # seek berries when they are in view, else this behavior
 # does nothing
 class seek_berries():
     def __init__(self):
         self.state = 0
-    # TODO
-    def output(self, i):
-        return 0
+        self.k_p = 0.5
+        self.k_d = 0.2
+        
+        self.old_error = 0
+        
+    # input list of berries should only include the good ones
+    def output(self, i, berries):
+        global current_berry
+        
+        if len(berries) == 0:
+            return 0
+        
+        # should sort berries based on which is closest to robot
+        sorted_berries = sorted(berries, key=lambda x: x.width*x.height, reverse=True)
+        target_berry = sorted_berries[0]
+        
+        error = target_berry.com[0] - IMG_X_CENTER
+        steer_cmd = (self.k_p*error + self.k_d*(error-self.old_error))/64
+        
+        self.old_error = error
+
+        if steer_cmd > 0:
+            base_tilt_right(steer_cmd)
+        elif steer_cmd < 0:
+            base_tilt_left(-steer_cmd)
+        else:
+            base_forwards()
+        
+        current_berry = target_berry.name[:-5]
+        
+        return 1
+        
+          
         
 # avoid zombies if they are in view, else this behavior
 # does nothing
@@ -106,10 +147,12 @@ class avoid_zombies():
     def __init__(self):
         self.state = 0
     # TODO
-    def output(self, i):
-        return 0
+    def output(self, i, zombies):
+        if len(zombies) == 0:
+            return 0
 
 ##### end of higher level behaviors #####
+
 
 # dictionary of higher level behaviors
 behaviors = {
@@ -122,7 +165,7 @@ behaviors = {
 # set of good berries
 # update this list as berries are obtained and effects are known
 # if berry is not on this list, it is bad
-good_berries = set(["orange", "red", "yellow", "pink"])
+good_berries = set(["ornge", "red", "yellow", "pink"])
 
 #------------------CHANGE CODE ABOVE HERE ONLY--------------------------
 
@@ -214,6 +257,8 @@ def main():
     
     i = 0
     j = 0
+    previous_stats = robot_info
+    previous_berry = current_berry
            
 
     #------------------CHANGE CODE ABOVE HERE ONLY--------------------------
@@ -255,49 +300,51 @@ def main():
          #called every timestep
          
         i += 0.5
+        
+        
+        #camera stuff
+        
+        #wrapper to C
+        imageRaw = camera1.getImage()
+        image = np.frombuffer(imageRaw, np.uint8).reshape((camera1.getHeight(), camera1.getWidth(), 4))
 
-        if behaviors['avoid zombies'].output(i):
+        elements = find_elements_on_img(image)
+        
+        berries = []
+        zombies = []
+        
+        for element in elements:
+            if element.name[-4:] == "zomb":
+                zombies.append(element)
+            elif element.name[-4:] == "berr" and element.com[1] > 27:
+                if element.name[:-5] not in good_berries:
+                    zombies.append(element)
+                else:
+                    berries.append(element)
+                    
+        #make decisions using inputs if you choose to do so
+        
+        if behaviors['avoid zombies'].output(i, []):
             continue
-        elif behaviors['seek berries'].output(i):
+        elif behaviors['seek berries'].output(i, berries):
+            if previous_stats[1] > robot_info[1] + 15:
+                print("--------------------------------------------")
+                print("bad berry", previous_berry, previous_stats, robot_info)
+                good_berries.remove(previous_berry)
+                print(good_berries)
             continue
         elif behaviors['avoid walls'].output(i):
             continue
         else:
-            #behaviors['wander'].output(i)
-        
-        #camera stuff
-        
-        #get image as nested list
-        # image = camera1.getImageArray()
-        
-        # #wrapper to C
-        # imageRaw = camera1.getImage()
-        
-        # #convert nested list to 3D numpy array, ready to be input to OpenCV
-        # npimg = np.array(image) #shape of array should be (128, 64, 3) (128x64 pix, 3 color chan)
-        
-        # #if img came back non-null
-        # if image:
-            # #example of how to get RGB components of each pixel
-            # for x in range(0, camera1.getWidth()):
-                # for y in range(0, camera1.getHeight()):
-                    # red   = image[x][y][0]
-                    # green = image[x][y][1]
-                    # blue  = image[x][y][2]
-                    # gray  = (red + green + blue) / 3
-                    # #print('r='+str(red)+' g='+str(green)+' b='+str(blue))
-                    
-        # if j == 0:  
-            # #obtain a test img of scene
-            #camera1.saveImage("testZombCalibrate_.jpg", 90)
-             
-        
-        #make decisions using inputs if you choose to do so
+            behaviors['wander'].output(i)
          
+        previous_stats = robot_info.copy()
+        previous_berry = current_berry[:]
+        
         #------------------CHANGE CODE ABOVE HERE ONLY--------------------------
         
         
-    return 0   
+    return 0
 
 
 main()
