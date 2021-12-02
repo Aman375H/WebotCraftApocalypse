@@ -28,8 +28,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation -0.13505396612248952 -0.9771131619124317 -0.16434809111174822 1.8250486866375843
-  position -46.810440213510155 17.97561438483356 -12.395966870299986
+  orientation 0.07816049739979539 0.9613033174342543 0.26417204344160633 3.6728186951802013
+  position -14.490532218159572 8.948215459526393 -15.543468874388276
 }
 TexturedBackground {
 }
@@ -136,12 +136,12 @@ DEF Youbot Youbot {
   ]
 }
 DEF Berry0 Solid {
-  translation 7.96007 0.0516629 3.2099
+  translation -6.40975 0.219049 11.5699
   rotation -0.4472135954998153 2.4166820336214355e-12 -0.8944271909999872 0.0010477170011384145
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 1 0.2 0.1
+        baseColor 0.9 0.5 0.7
         roughness 1
         metalness 0
       }
@@ -150,7 +150,7 @@ DEF Berry0 Solid {
       }
     }
   ]
-  name "solid(8)"
+  name "solid(40)"
   boundingObject DEF BOX Box {
     size 0.1 0.1 0.1
   }
@@ -158,12 +158,12 @@ DEF Berry0 Solid {
   }
 }
 DEF Berry1 Solid {
-  translation -5.88993 0.0604899 -5.6501
+  translation -6.14391 0.238179 5.91077
   rotation -0.4472135954998153 2.4166820336214355e-12 -0.8944271909999872 0.0010477170011384145
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 1 0.2 0.1
+        baseColor 0.9 0.5 0.7
         roughness 1
         metalness 0
       }
@@ -172,7 +172,73 @@ DEF Berry1 Solid {
       }
     }
   ]
-  name "solid(1)"
+  name "solid(41)"
+  boundingObject DEF BOX Box {
+    size 0.1 0.1 0.1
+  }
+  physics Physics {
+  }
+}
+DEF Berry2 Solid {
+  translation 2.46284 0.0348169 8.05937
+  rotation -0.4472135954998153 2.4166820336214355e-12 -0.8944271909999872 0.0010477170011384145
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.9 0.5 0.7
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.1 0.1 0.1
+      }
+    }
+  ]
+  name "solid(42)"
+  boundingObject DEF BOX Box {
+    size 0.1 0.1 0.1
+  }
+  physics Physics {
+  }
+}
+DEF Berry3 Solid {
+  translation 0.3102 0.0508231 7.4299
+  rotation -0.4472135954998153 2.4166820336214355e-12 -0.8944271909999872 0.0010477170011384145
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.9 0.5 0.7
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.1 0.1 0.1
+      }
+    }
+  ]
+  name "solid(43)"
+  boundingObject DEF BOX Box {
+    size 0.1 0.1 0.1
+  }
+  physics Physics {
+  }
+}
+DEF Berry4 Solid {
+  translation 5.5502 0.0458657 7.3299
+  rotation -0.4472135954998153 2.4166820336214355e-12 -0.8944271909999872 0.0010477170011384145
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.9 0.5 0.7
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.1 0.1 0.1
+      }
+    }
+  ]
+  name "solid(44)"
   boundingObject DEF BOX Box {
     size 0.1 0.1 0.1
   }

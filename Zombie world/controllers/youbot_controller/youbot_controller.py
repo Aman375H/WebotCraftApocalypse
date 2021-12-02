@@ -61,80 +61,38 @@ def arm_init(robot):
 
     arm_elements[ARM2].setVelocity(0.5);
 
-    arm_set_height(ARM_RESET);
-    arm_set_orientation(ARM_FRONT);
-
 def arm_reset():
     arm_elements[ARM1].setPosition(0.0)
     arm_elements[ARM2].setPosition(1.57)
     arm_elements[ARM3].setPosition(-2.635)
     arm_elements[ARM4].setPosition(1.78)
     arm_elements[ARM5].setPosition(0.0)
+    
+def arm_set_berry_pos():
+    arm_elements[ARM2].setPosition(-1.13)
+    arm_elements[ARM3].setPosition(-0.55)
+    arm_elements[ARM4].setPosition(0.0)
+    arm_elements[ARM5].setPosition(0.0)
 
-def arm_set_height(height):
-    if height == ARM_FRONT_FLOOR:
-        arm_elements[ARM2].setPosition(-0.97)
-        arm_elements[ARM3].setPosition(-1.55)
-        arm_elements[ARM4].setPosition(-0.61)
-        arm_elements[ARM5].setPosition(0.0)
-    elif height == ARM_FRONT_PLATE:
-        arm_elements[ARM2].setPosition(-0.62)
-        arm_elements[ARM3].setPosition(-0.98)
-        arm_elements[ARM4].setPosition(-1.53)
-        arm_elements[ARM5].setPosition(0.0)
-    elif height == ARM_FRONT_CARDBOARD_BOX:
-        arm_elements[ARM2].setPosition(0.0)
-        arm_elements[ARM3].setPosition(-0.77)
-        arm_elements[ARM4].setPosition(-1.21)
-        arm_elements[ARM5].setPosition(0.0)
-    elif height == ARM_RESET:
-        arm_elements[ARM2].setPosition(1.57)
-        arm_elements[ARM3].setPosition(-2.635)
-        arm_elements[ARM4].setPosition(1.78)
-        arm_elements[ARM5].setPosition(0.0)
-    elif height == ARM_BACK_PLATE_HIGH:
-        arm_elements[ARM2].setPosition(0.678)
-        arm_elements[ARM3].setPosition(0.682)
-        arm_elements[ARM4].setPosition(1.74)
-        arm_elements[ARM5].setPosition(0.0)
-    elif height == ARM_BACK_PLATE_LOW:
-        arm_elements[ARM2].setPosition(0.92)
-        arm_elements[ARM3].setPosition(0.42)
-        arm_elements[ARM4].setPosition(1.78)
-        arm_elements[ARM5].setPosition(0.0)
-    elif height == ARM_HANOI_PREPARE:
-        arm_elements[ARM2].setPosition(-0.4)
-        arm_elements[ARM3].setPosition(-1.2)
-        arm_elements[ARM4].setPosition(-np.pi/2)
-        arm_elements[ARM5].setPosition(np.pi/2)
-    else:
-        print("arm_height() called with a wrong argument")
-        return
+# gripper functions
+LEFT = 0
+RIGHT = 1
 
-    current_height = height
+MIN_POS = 0.0
+MAX_POS = 0.025
+OFFSET_WHEN_LOCKED = 0.021
 
-def arm_set_orientation(orientation):
-    if orientation == ARM_BACK_LEFT:
-        arm_elements[ARM1].setPosition(-2.949)
-    elif orientation == ARM_LEFT:
-        arm_elements[ARM1].setPosition(-np.pi/2)
-    elif orientation == ARM_FRONT_LEFT:
-        arm_elements[ARM1].setPosition(-0.2)
-    elif orientation == ARM_FRONT:
-        arm_elements[ARM1].setPosition(0.0)
-    elif orientation == ARM_FRONT_RIGHT:
-        arm_elements[ARM1].setPosition(0.2)
-    elif orientation == ARM_RIGHT:
-        arm_elements[ARM1].setPosition(np.pi/2)
-    elif orientation == ARM_BACK_RIGHT:
-        arm_elements[ARM1].setPosition(2.949)
-    else:
-      print("arm_set_side() called with a wrong argument\n")
-      return
-    current_orientation = orientation
+fingers = [None, None]
 
-def arm_set_sub_arm_rotation(arm, radian):
-    arm_elements[arm].setPosition(radian)
+def gripper_init(robot):
+  fingers[LEFT] = robot.getDevice("finger1")
+  fingers[RIGHT] = robot.getDevice("finger2")
+
+  fingers[LEFT].setVelocity(0.03)
+  fingers[RIGHT].setVelocity(0.03)
+  fingers[LEFT].setPosition(MAX_POS)
+  fingers[RIGHT].setPosition(MAX_POS)
+  
 
 #kinematics functions, translated to Python
 def base_set_wheel_velocity(t, velocity):
@@ -188,25 +146,47 @@ def base_tilt_right(tilt_factor):
 class wander():
     def __init__(self):
         self.state = 0
-        self.wall_threshold = 1000
-    def output(self, i, walls):
-        # if nothing is in view, wander in circles, searching
+        self.turn_state = 0
+        self.prev_time = 0
+        self.prev_turn_time = 0
+        self.wall_threshold = 10
+    def output(self, i, walls, health, energy):
+        # try turning other way periodically
+        if i-self.prev_turn_time > 350:
+            print("change wander direction")
+            self.turn_state = 1 - self.turn_state
+            self.prev_turn_time = i
+            
+        # if nothing is in view, wander in circles and along walls, searching
         if len(walls) == 0:
-            if i % 16 == 0:
+            if self.state == 0 and i-self.prev_time >= 20 or self.state == 1 and i-self.prev_time >= 60:
                 self.state = 1 - self.state
+                self.prev_time = i
             # survey
             if self.state == 0:
-                base_turn_right()
+                if self.turn_state:
+                    base_turn_left()
+                else:
+                    base_turn_right()
             # march forwards
             elif self.state == 1:
                 base_forwards()
             return
             
-        sorted_walls = sorted(berries, key=lambda x: x.width*x.height, reverse=True)
+        sorted_walls = sorted(walls, key=lambda x: x.width*x.height, reverse=True)
         target_wall = sorted_walls[0]
         
-        if target_wall.width*target_wall.height > THRESHOLD:
-            base_turn_right
+        total_wall_area = 0
+        for wall in sorted_walls:
+            total_wall_area += wall.width*wall.height
+        
+        # print(total_wall_area, target_wall.width*target_wall.height, target_wall.width, target_wall.height)
+        
+        if total_wall_area > self.wall_threshold:
+            if self.turn_state:
+                base_turn_left()
+            else:
+                base_turn_right()
         else:
             base_forwards()
 
@@ -338,9 +318,12 @@ def main():
     receiver = robot.getDevice("receiver")
     receiver.enable(timestep)
     
+    """
+    
     rangeFinder = robot.getDevice("range-finder")
     rangeFinder.enable(timestep)
     
+    """
     lidar = robot.getDevice("lidar")
     lidar.enable(timestep)"""
     
@@ -358,7 +341,9 @@ def main():
     
     wheels.extend([fr, fl, br, bl])
     arm_init(robot)
-    arm_set_height(ARM_HANOI_PREPARE)
+    # arm_set_height(ARM_HANOI_PREPARE)
+    arm_set_berry_pos()
+    gripper_init(robot)
     
     i = 0
     j = 0
@@ -411,9 +396,20 @@ def main():
         
         #wrapper to C
         imageRaw = camera1.getImage()
-        camera1.saveImage("/home/nodog/WebotCraftApocalypse/testing/img/shortWall.jpg", 90)
         image = np.frombuffer(imageRaw, np.uint8).reshape((camera1.getHeight(), camera1.getWidth(), 4))
-
+        
+        
+        # range image depth detection
+        range_image = rangeFinder.getRangeImageArray()
+        avg_depth = 0
+        
+        for j in range(27, 37):
+            for k in range(25, 35):
+                avg_depth += range_image[j][k]
+        avg_depth /= 100
+        print(avg_depth)
+        
+        # find all elements of interest in image
         elements = find_elements_on_img(image)
         
         berries = []
@@ -424,32 +420,34 @@ def main():
         for element in elements:
             if element.name[-4:] == "zomb":
                 zombies.append(element)
-            elif element.name[-4:] == "berr" and element.com[1] > 27:
+            elif element.name[-4:] == "berr":
                 if element.name[:-5] not in good_berries:
                     zombies.append(element)
                 else:
                     berries.append(element)
-            elif element.name == "wall":
+            elif element.name == "wall" and avg_depth < 3.7:
                 walls.append(element)
             elif element.name == "stump":
-                stumps.append(element)    
-                    
-        #make decisions using inputs if you choose to do so
-        """
+                stumps.append(element)  
+
+        # choose behaviors according to subsumption architecture
         if behaviors['avoid zombies'].output(i, []):
+            print("avoiding zombies")
             continue
-        elif behaviors['seek berries'].output(i, berries):
-            if previous_stats[1] > robot_info[1] + 15:
-                print("--------------------------------------------")
-                print("bad berry", previous_berry, previous_stats, robot_info)
-                good_berries.remove(previous_berry)
-                print(good_berries)
+        elif (robot_info[0] < 90 or robot_info[1] < 90) and behaviors['seek berries'].output(i, berries):
+            print("seeking berries")
+            # if previous_stats[1] > robot_info[1] + 15 and previous_berry in good_berries:
+                # print("--------------------------------------------")
+                # print("bad berry", previous_berry, previous_stats, robot_info)
+                # good_berries.remove(previous_berry)
+                # print(good_berries)
             continue
         else:
-            behaviors['wander'].output(i, walls)
-         
+            print("wandering")
+            behaviors['wander'].output(i, walls, robot_info[0], robot_info[1])
+        
         previous_stats = robot_info.copy()
-        previous_berry = current_berry[:]"""
+        previous_berry = current_berry[:]
         
         #------------------CHANGE CODE ABOVE HERE ONLY--------------------------
         

@@ -28,10 +28,19 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation -0.13505396612248952 -0.9771131619124317 -0.16434809111174822 1.8250486866375843
-  position -46.810440213510155 17.97561438483356 -12.395966870299986
+  orientation 0.24671624525324226 -0.9451644733007705 -0.2139981605954104 4.82707668093944
+  position 16.676161355715617 4.530619266266228 2.9020484668613653
 }
 TexturedBackground {
+}
+Tree {
+  translation 0 0 8
+  scale 1.5 10 1.5
+}
+Tree {
+  translation 9 0 -11
+  name "tree(1)"
+  scale 1.5 10 1.5
 }
 TexturedBackgroundLight {
   castShadows FALSE
@@ -136,12 +145,12 @@ DEF Youbot Youbot {
   ]
 }
 DEF Berry0 Solid {
-  translation 7.96007 0.0516629 3.2099
+  translation 9.1003 0.249177 0.179809
   rotation -0.4472135954998153 2.4166820336214355e-12 -0.8944271909999872 0.0010477170011384145
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 1 0.2 0.1
+        baseColor 1 0.9 0
         roughness 1
         metalness 0
       }
@@ -150,32 +159,32 @@ DEF Berry0 Solid {
       }
     }
   ]
-  name "solid(8)"
+  name "solid(14)"
   boundingObject DEF BOX Box {
     size 0.1 0.1 0.1
   }
   physics Physics {
+    density 100
   }
 }
-DEF Berry1 Solid {
-  translation -5.88993 0.0604899 -5.6501
-  rotation -0.4472135954998153 2.4166820336214355e-12 -0.8944271909999872 0.0010477170011384145
+DEF BOX1 Solid {
+  translation 9.16 0.1 0.18
+  rotation -0.7774744030964151 0.09313982042610232 -0.6219795224771202 2.1933874080388928e-16
+  scale 2 2 2
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 1 0.2 0.1
+        baseColor 0 0 0
         roughness 1
         metalness 0
       }
       geometry Box {
-        size 0.1 0.1 0.1
+        size 0.2 0.1 0.2
       }
     }
   ]
-  name "solid(1)"
+  name "solid(22)"
   boundingObject DEF BOX Box {
-    size 0.1 0.1 0.1
-  }
-  physics Physics {
+    size 0.2 0.1 0.2
   }
 }
