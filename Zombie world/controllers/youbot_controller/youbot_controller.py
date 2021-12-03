@@ -22,7 +22,7 @@ import cv2
 SPEED = 14
 INFINITY = float('inf')
 IMG_X_CENTER = 64
-current_berry = ""
+LAST_BERRY_CONSUMED = ""
 
 wheels = []
 
@@ -201,8 +201,6 @@ class seek_berries():
         
     # input list of berries should only include the good ones
     def output(self, i, berries):
-        global current_berry
-        
         if len(berries) == 0:
             return 0
         
@@ -221,8 +219,6 @@ class seek_berries():
             base_tilt_left(-steer_cmd)
         else:
             base_forwards()
-        
-        current_berry = target_berry.name[:-5]
         
         return 1 
         
@@ -249,7 +245,7 @@ behaviors = {
 # set of good berries
 # update this list as berries are obtained and effects are known
 # if berry is not on this list, it is bad
-good_berries = set(["ornge", "red", "yellow", "pink"])
+good_berries = set(["orng", "red", "yellow", "pink"])
 
 #------------------CHANGE CODE ABOVE HERE ONLY--------------------------
 
@@ -346,10 +342,11 @@ def main():
     arm_set_berry_pos()
     gripper_init(robot)
     
+    global LAST_BERRY_CONSUMED
+    
     i = 0
     j = 0
     previous_stats = robot_info
-    previous_berry = current_berry
     previous_direction = 0
     time_since_direction_change = 0
            
@@ -400,6 +397,7 @@ def main():
         #wrapper to C
         imageRaw = camera1.getImage()
         image = np.frombuffer(imageRaw, np.uint8).reshape((camera1.getHeight(), camera1.getWidth(), 4))
+        camera1.saveImage("C:/Users/aman3/OneDrive/Documents\\GitHub\\WebotCraftApocalypse\\testing\\img\\orng.jpg", 90)
         
         
         # range image depth detection
@@ -449,17 +447,22 @@ def main():
                 walls.append(element)
             elif element.name == "stump":
                 stumps.append(element)
+        
+        if len(berries):
+            largest_berry = sorted(berries, key=lambda x: x.width*x.height, reverse=True)[0]
+            if largest_berry.width*largest_berry.height > 4000:
+                LAST_BERRY_CONSUMED = largest_berry.name[:-5]
+        print("last berry:", LAST_BERRY_CONSUMED)
 
         # choose behaviors according to subsumption architecture
         if behaviors['avoid zombies'].output(i, []):
             print("avoiding zombies")
         elif (robot_info[0] < 90 or robot_info[1] < 90) and behaviors['seek berries'].output(i, berries):
             print("seeking berries")
-            # if previous_stats[1] > robot_info[1] + 15 and previous_berry in good_berries:
-                # print("--------------------------------------------")
-                # print("bad berry", previous_berry, previous_stats, robot_info)
-                # good_berries.remove(previous_berry)
-                # print(good_berries)
+            if previous_stats[1] > robot_info[1] + 15 and LAST_BERRY_CONSUMED in good_berries:
+                print("--------------------------------------------")
+                print("bad berry", LAST_BERRY_CONSUMED, previous_stats, robot_info)
+                good_berries.remove(LAST_BERRY_CONSUMED)
         elif len(stumps) > 0 and stumps[0].height*stumps[0].width > 2000:
             print("charging stump")
             base_forwards()
@@ -468,7 +471,6 @@ def main():
             behaviors['wander'].output(i, walls, robot_info[0], robot_info[1])
         
         previous_stats = robot_info.copy()
-        previous_berry = current_berry[:]
         
         #------------------CHANGE CODE ABOVE HERE ONLY--------------------------
         
