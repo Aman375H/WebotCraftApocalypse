@@ -70,7 +70,7 @@ def arm_reset():
     
 def arm_set_berry_pos():
     arm_elements[ARM2].setPosition(-1.13)
-    arm_elements[ARM3].setPosition(-0.55)
+    arm_elements[ARM3].setPosition(-0.65)
     arm_elements[ARM4].setPosition(0.0)
     arm_elements[ARM5].setPosition(0.0)
 
@@ -149,7 +149,7 @@ class wander():
         self.turn_state = 0
         self.prev_time = 0
         self.prev_turn_time = 0
-        self.wall_threshold = 10
+        self.wall_threshold = 0
     def output(self, i, walls, health, energy):
         # try turning other way periodically
         if i-self.prev_turn_time > 350:
@@ -275,14 +275,15 @@ def main():
     #------------------CHANGE CODE BELOW HERE ONLY--------------------------
     
     #COMMENT OUT ALL SENSORS THAT ARE NOT USED. READ SPEC SHEET FOR MORE DETAILS
-    """accelerometer = robot.getDevice("accelerometer")
+    """
+    accelerometer = robot.getDevice("accelerometer")
     accelerometer.enable(timestep)
     
     gps = robot.getDevice("gps")
     gps.enable(timestep)
-    
+    """
     compass = robot.getDevice("compass")
-    compass.enable(timestep)"""
+    compass.enable(timestep)
     
     camera1 = robot.getDevice("ForwardLowResBigFov")
     camera1.enable(timestep)
@@ -349,6 +350,8 @@ def main():
     j = 0
     previous_stats = robot_info
     previous_berry = current_berry
+    previous_direction = 0
+    time_since_direction_change = 0
            
 
     #------------------CHANGE CODE ABOVE HERE ONLY--------------------------
@@ -407,7 +410,24 @@ def main():
             for k in range(25, 35):
                 avg_depth += range_image[j][k]
         avg_depth /= 100
-        print(avg_depth)
+        
+        
+        # movement check to avoid getting stuck
+        direction = compass.getValues()[1]
+        
+        if 60 < time_since_direction_change < 75:
+            print("evasive maneuvers")
+            base_backwards()
+            time_since_direction_change += 1
+            continue
+            
+        if abs(direction - previous_direction) < 0.001:
+            time_since_direction_change += 0.5
+        else:
+            time_since_direction_change = 0
+            
+        previous_direction = direction
+        
         
         # find all elements of interest in image
         elements = find_elements_on_img(image)
@@ -428,12 +448,11 @@ def main():
             elif element.name == "wall" and avg_depth < 3.7:
                 walls.append(element)
             elif element.name == "stump":
-                stumps.append(element)  
+                stumps.append(element)
 
         # choose behaviors according to subsumption architecture
         if behaviors['avoid zombies'].output(i, []):
             print("avoiding zombies")
-            continue
         elif (robot_info[0] < 90 or robot_info[1] < 90) and behaviors['seek berries'].output(i, berries):
             print("seeking berries")
             # if previous_stats[1] > robot_info[1] + 15 and previous_berry in good_berries:
@@ -441,7 +460,9 @@ def main():
                 # print("bad berry", previous_berry, previous_stats, robot_info)
                 # good_berries.remove(previous_berry)
                 # print(good_berries)
-            continue
+        elif len(stumps) > 0 and stumps[0].height*stumps[0].width > 2000:
+            print("charging stump")
+            base_forwards()
         else:
             print("wandering")
             behaviors['wander'].output(i, walls, robot_info[0], robot_info[1])
