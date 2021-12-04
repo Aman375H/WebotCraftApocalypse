@@ -21,12 +21,12 @@ CV_GREEN_RGB = np.multiply(WEBOTS_GREEN, 255)
 CV_PURPLE_RGB = np.multiply(WEBOTS_PURPLE, 255)
 
 #aqua zombies
-LOWER_AQUA_HSV = np.array([78, 150, 50])
+LOWER_AQUA_HSV = np.array([78, 100, 30])
 UPPER_AQUA_HSV = np.array([92, 255, 255])
 AQUA_ZOMB_COLOR = [LOWER_AQUA_HSV, UPPER_AQUA_HSV]
 
 #blue zombies
-LOWER_BLUE_HSV = np.array([95, 200, 100])
+LOWER_BLUE_HSV = np.array([95, 150, 50])
 UPPER_BLUE_HSV = np.array([115, 255, 255])
 BLUE_ZOMB_COLOR = [LOWER_BLUE_HSV, UPPER_BLUE_HSV]
 
@@ -91,10 +91,16 @@ LOWER_WHITE2_HSV = np.array([0, 0, 150])
 UPPER_WHITE2_HSV = np.array([255, 20, 255])
 SUNNY_WALL_COLOR = [LOWER_WHITE2_HSV, UPPER_WHITE2_HSV]
 
+#stumps
+LOWER_BLACK_HSV = np.array([0, 0, 0])
+UPPER_BLACK_HSV = np.array([180, 255, 30])
+STUMP_COLOR = [LOWER_BLACK_HSV, UPPER_BLACK_HSV]
 
 
 #filter bank
-filter_bank = {"aqua_zomb": AQUA_ZOMB_COLOR, "blue_zomb": BLUE_ZOMB_COLOR, "purp_zomb": PURPLE_ZOMB_COLOR, "green_zomb": GREEN_ZOMB_COLOR, "yellow_berr": YELLOW_BERR_COLOR, "orng_berr": ORANGE_BERR_COLOR, "pink_berr": PINK_BERR_COLOR, "red_berr": [RED_BERR_COLOR, RED2_BERR_COLOR], "wall" : [SHADED_WALL_COLOR, SUNNY_WALL_COLOR]}
+filter_bank = {"aqua_zomb": AQUA_ZOMB_COLOR, "blue_zomb": BLUE_ZOMB_COLOR, "purp_zomb": PURPLE_ZOMB_COLOR, "green_zomb": GREEN_ZOMB_COLOR, 
+"yellow_berr": YELLOW_BERR_COLOR, "orng_berr": ORANGE_BERR_COLOR, "pink_berr": PINK_BERR_COLOR, 
+"red_berr": [RED_BERR_COLOR, RED2_BERR_COLOR], "wall" : [SHADED_WALL_COLOR, SUNNY_WALL_COLOR], "stump": STUMP_COLOR}
 
 """ IGNORE
 CV_AQUA_HSV = np.array([167, 100, 90])

@@ -26,7 +26,7 @@ UPPER_AQUA_HSV = np.array([92, 255, 255])
 AQUA_ZOMB_COLOR = [LOWER_AQUA_HSV, UPPER_AQUA_HSV]
 
 #blue zombies
-LOWER_BLUE_HSV = np.array([95, 200, 100])
+LOWER_BLUE_HSV = np.array([95, 150, 50])
 UPPER_BLUE_HSV = np.array([115, 255, 255])
 BLUE_ZOMB_COLOR = [LOWER_BLUE_HSV, UPPER_BLUE_HSV]
 
@@ -114,12 +114,13 @@ CONT_COL_GREEN = (0, 255, 0) #contour line color (for testing)
 
 #element class: an element of interest in the image
 class Element:
-    def __init__(self, name, com, cntr_pts, width, height):
+    def __init__(self, name, com, cntr_pts, width, height, center):
         self.name = name
         self.com = com
         self.cntr_pts = cntr_pts
         self.width = width
         self.height = height
+        self.center = center
 
     #TODO
 
@@ -150,7 +151,7 @@ def find_and_save_contours(mask_img, name, elements):
 
     for contour in cnts:
         #find corresponding max y val for that x val
-        x,y,w,h = cv2.boundingRect(contour)
+        x, y, w, h = cv2.boundingRect(contour)
         
         # for i in range(0, contour.shape[0]): #iterate over all points in contour
             # this_x = contour[i, :, 0]
@@ -188,8 +189,10 @@ def find_and_save_contours(mask_img, name, elements):
             cY = int(contour[0, :, 1])
 
         com = [cX, cY]
+        
+        center = [x + (w/2), y + (h/2)]
 
-        elements.append(Element(name, com, contour, w, h))
+        elements.append(Element(name, com, contour, w, h, center))
         #cv2.putText(image, shape, (cX, cY), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
 
@@ -199,7 +202,7 @@ def locate_element(element_name, hsv_img, elements):
     element_color_filters = filter_bank[element_name]
     #print(element_color_filters)
 
-    #scan for both reds
+    #scan for both reds and both wall colors
     if element_name == "red_berr" or element_name == "wall":
         for filter_pair in element_color_filters:
             mask = cv2.inRange(hsv_img, filter_pair[0], filter_pair[1])

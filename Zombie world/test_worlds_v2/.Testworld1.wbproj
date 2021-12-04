@@ -1,18 +1,19 @@
 Webots Project File version R2021b
-perspectives: 000000ff00000000fd00000002000000010000021e000002c6fc0200000001fb0000001400540065007800740045006400690074006f00720100000016000002c60000008700ffffff00000003000005dd000000e1fc0100000001fb0000001a0043006f006e0073006f006c00650041006c006c0041006c006c0100000000000005dd0000006900ffffff000003bd000002c600000001000000020000000100000008fc00000000
-simulationViewPerspectives: 000000ff000000010000000200000000000003c40100000002010000000100
-sceneTreePerspectives: 000000ff0000000100000002000000c0000000fc0100000002010000000200
+perspectives: 000000ff00000000fd00000002000000010000042b000002e5fc0200000001fb0000001400540065007800740045006400690074006f00720100000016000002e5000000a200ffffff0000000300000780000000e1fc0100000001fb0000001a0043006f006e0073006f006c00650041006c006c0041006c006c0100000000000007800000005400ffffff0000034f000002e500000001000000020000000100000008fc00000000
+simulationViewPerspectives: 000000ff000000010000000200000000000003c40100000006010000000100
+sceneTreePerspectives: 000000ff0000000100000002000000c0000000fc0100000006010000000200
 maximizedDockId: -1
 centralWidgetVisible: 1
 orthographicViewHeight: 1
-textFiles: 0 "controllers/youbot_controller/zombiemasktest.py" "controllers/youbot_controller/youbot_controller.py"
+textFiles: 1 "controllers/youbot_controller/zombiemasktest.py" "controllers/youbot_controller/youbot_controller.py"
+globalOptionalRendering: CameraFrustums
 consoles: Console:All:All
-renderingDevicePerspectives: youBot:BackHighRes;1;0.757813;0;0
-renderingDevicePerspectives: youBot:BackLowRes;1;1;0;0
-renderingDevicePerspectives: youBot:ForwardHighRes;1;1;0;0
-renderingDevicePerspectives: youBot:ForwardHighResSmall;1;1;0;0
-renderingDevicePerspectives: youBot:ForwardHighResSmallFov;1;1;0;0
-renderingDevicePerspectives: youBot:ForwardLowResBigFov;1;2;0;0
-renderingDevicePerspectives: youBot:LeftLowRes;1;1;0;0
-renderingDevicePerspectives: youBot:RightLowRes;1;1;0;0
+renderingDevicePerspectives: youBot:BackHighRes;0;0.757813;0;0
+renderingDevicePerspectives: youBot:BackLowRes;0;1;0;0
+renderingDevicePerspectives: youBot:ForwardHighRes;0;1;0;0
+renderingDevicePerspectives: youBot:ForwardHighResSmall;0;1;0;0
+renderingDevicePerspectives: youBot:ForwardHighResSmallFov;0;1;0;0
+renderingDevicePerspectives: youBot:ForwardLowResBigFov;0;2;0.268728;0
+renderingDevicePerspectives: youBot:LeftLowRes;0;1;0;0
+renderingDevicePerspectives: youBot:RightLowRes;0;1;0;0
 renderingDevicePerspectives: youBot:range-finder;1;1;0;0
