@@ -230,6 +230,44 @@ class seek_berries():
         
         return 1 #send digital high in subsumption wire
         
+class avoid_bad_berries():
+    def __init__(self):
+        self.state = 0
+        self.berry_size_threshold = 75
+        self.berry_pos_threshold = 50 #how close should zombie be to ctr of image for us to consider it threat
+        self.berry_xpos_min = IMG_X_CENTER - self.berry_pos_threshold
+        self.berry_xpos_max = IMG_X_CENTER + self.berry_pos_threshold
+        
+        
+    def output(self, i, berries, wanderer):
+        if len(berries) == 0:
+            return 0 #send digital low in subsumption wire
+            
+     
+            
+        #if see some zombies, find "closest" one (covering most pixel area)
+        largest_berry = sorted(berries, key=lambda x: x.width * x.height, reverse=True)[0]
+        largest_berry_area = largest_berry.width * largest_berry.height
+        x_center = largest_berry.center[0]
+        
+        #only worry if zombie is in range
+        if largest_berry_area < self.berry_size_threshold or x_center < self.berry_xpos_min or x_center > self.berry_xpos_max:
+            #print("Zomb detected but out of rg")
+            return 0 #send digital low in subsumption wire
+            
+        #turn away from zombie
+        if 0 > x_center > self.berry_xpos_min or x_center == 0:
+            base_turn_right() 
+            wanderer.turn_state = 0
+            
+        else:
+            base_turn_left()
+            wanderer.turn_state = 1
+        
+        wanderer.prev_turn_time = i
+        return 1
+        
+        
 # avoid zombies if they are in view, else this behavior does nothing
 class avoid_zombies():
     def __init__(self):
@@ -238,6 +276,7 @@ class avoid_zombies():
         self.zomb_pos_threshold = 58 #how close should zombie be to ctr of image for us to consider it threat
         self.zomb_xpos_min = IMG_X_CENTER - self.zomb_pos_threshold
         self.zomb_xpos_max = IMG_X_CENTER + self.zomb_pos_threshold
+        
         
     def output(self, i, zombies, wanderer):
         if len(zombies) == 0:
@@ -272,6 +311,7 @@ class avoid_zombies():
 behaviors = {
     "wander": wander(),
     "seek berries": seek_berries(),
+    "avoid bad berries": avoid_bad_berries(),
     "avoid zombies": avoid_zombies(),
 }
 
@@ -384,6 +424,7 @@ def main():
     previous_stats = robot_info 
     previous_direction = 0
     time_since_direction_change = 0
+    time_stump_seen = -50
            
 
     #------------------CHANGE CODE ABOVE HERE ONLY--------------------------
@@ -449,13 +490,12 @@ def main():
                 avg_depth += range_image[j][k]
         avg_depth /= 100
         
-        
         # movement check to avoid getting stuck
         direction = compass.getValues()[1]
         
         #if haven't changed direction in a while, probably stuck on sth
-        if 60 < time_since_direction_change < 75:
-            #print("evasive maneuvers")
+        if 10 < i - time_stump_seen < 25 or 60 < time_since_direction_change < 75:
+            print("evasive maneuvers")
             
             #start moving backwards, continue for 15 cc
             base_backwards()
@@ -476,6 +516,7 @@ def main():
         elements = find_elements_on_img(image)
         
         berries = []
+        bad_berries = []
         zombies = []
         walls = []
         stumps = []
@@ -485,7 +526,7 @@ def main():
                 zombies.append(element)
             elif element.name[-4:] == "berr":
                 if element.name[:-5] not in good_berries:
-                    zombies.append(element) #if the berry is bad, treat it like a zombie
+                    bad_berries.append(element) #if the berry is bad, treat it like a zombie
                 else:
                     berries.append(element) 
             elif element.name == "wall" and avg_depth < 3.7:
@@ -498,13 +539,14 @@ def main():
             largest_berry = sorted(berries, key=lambda x: x.width * x.height, reverse=True)[0]
             if largest_berry.width * largest_berry.height > 4000: #assume robot consumed berry at this pt
                 LAST_BERRY_CONSUMED = largest_berry.name[:-5] #keep track of berry just consumed
-        #print("last berry:", LAST_BERRY_CONSUMED)
-        
-        
-            
-
+                #if detected some berries, find "closest" one 
+                
         # choose behaviors according to subsumption architecture
-        if behaviors['avoid zombies'].output(i, zombies, behaviors["wander"]):
+        if behaviors['avoid bad berries'].output(i,bad_berries, behaviors["wander"]):
+            #BERRY AVOIDANCE SUBSUMED
+            print("avoiding bad berry")
+        
+        if robot_info[2] == 0 and behaviors['avoid zombies'].output(i, zombies, behaviors["wander"]):
             #ZOMBIE AVOIDANCE HATH SUBSUMED
             print("avoiding zombies")
             
@@ -520,8 +562,9 @@ def main():
                 good_berries.remove(LAST_BERRY_CONSUMED)
         elif len(stumps) > 0 and stumps[0].height * stumps[0].width > 2000:
             #STUMP CHARGING HATH SUBSUMED
-            #print("charging stump")
+            print("charging stump")
             base_forwards()
+            time_stump_seen = i
         else:
             #print("wandering")
             #DEFAULT WANDERING BEHAVIOR, GOT NOTHING BETTER TO DO
