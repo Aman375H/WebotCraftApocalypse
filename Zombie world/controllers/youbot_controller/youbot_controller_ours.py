@@ -7,10 +7,11 @@ from youbot_zombie import *
 
 import numpy as np
 import cv2
-   
+
 #------------------CHANGE CODE BELOW HERE ONLY--------------------------
 #define functions here for making decisions and using sensor inputs
-    
+
+
 ############### CAMERA CODE ###################
 
 #Zombies: 1.82m tall
@@ -90,8 +91,8 @@ WEBOTS_WHITE = np.array([1, 1, 1])
 CV_WHITE_RGB = np.multiply(WEBOTS_WHITE, 255) 
 
 #shaded_wall
-LOWER_WHITE_HSV = np.array([0, 0, 0]) #100, 0, 0
-UPPER_WHITE_HSV = np.array([180, 40, 100]) #115, 70, 100
+LOWER_WHITE_HSV = np.array([100, 0, 0])
+UPPER_WHITE_HSV = np.array([115, 70, 100])
 SHADED_WALL_COLOR = [LOWER_WHITE_HSV, UPPER_WHITE_HSV]
 
 #sunny wall
@@ -234,7 +235,6 @@ SPEED = 14
 INFINITY = float('inf')
 IMG_X_CENTER = 64
 LAST_BERRY_CONSUMED = ""
-time_stump_seen = -50
 
 wheels = []
 
@@ -362,7 +362,7 @@ class wander():
         self.prev_time = 0
         self.prev_turn_time = 0
         self.wall_threshold = 0
-    def output(self, i, walls, health, energy, l_avg_depth, r_avg_depth):
+    def output(self, i, walls, health, energy):
         # try turning other way periodically
         if i - self.prev_turn_time > 350:
             print("change wander direction")
@@ -376,9 +376,9 @@ class wander():
                 self.prev_time = i
             
             # survey
-           
+            
             #if in state 0, just turn in place based on turn_state 
-            elif self.state == 0:
+            if self.state == 0:
                 if self.turn_state:
                     base_turn_left() 
                 else:
@@ -387,13 +387,6 @@ class wander():
             #if in state 1, march forwards
             elif self.state == 1:
                 base_forwards()
-            return
-        
-        if l_avg_depth - r_avg_depth > 1:
-            base_turn_left()
-            return
-        elif r_avg_depth - l_avg_depth > 1:
-            base_turn_right()
             return
             
         #if have some supposed wall contours in view, find largest by area    
@@ -406,8 +399,8 @@ class wander():
             total_wall_area += wall.width * wall.height
         
         # print(total_wall_area, target_wall.width*target_wall.height, target_wall.width, target_wall.height)
-      
-        #if still lots of wall, turn around based on current turn_state
+        
+        #if lots of wall, turn around based on current turn_state
         if total_wall_area > self.wall_threshold:
             if self.turn_state:
                 base_turn_left()
@@ -429,15 +422,11 @@ class seek_berries():
     def output(self, i, berries):
         if len(berries) == 0:
             return 0 #send digital low in subsumption wire
-       
+        
         # should sort berries based on which is closest to robot
         sorted_berries = sorted(berries, key=lambda x: x.width * x.height, reverse=True)
         target_berry = sorted_berries[0] #target the closest berry
         
-        if target_berry.name == "orng_berr" and target_berry.width*target_berry.height <= 10:
-            return 0
-        
-        print(target_berry.name, target_berry.width*target_berry.height)
         error = target_berry.com[0] - IMG_X_CENTER #x dist of berry from img center
         steer_cmd = (self.k_p * error + self.k_d * (error-self.old_error)) / 64 #get PD controller output
         
@@ -542,7 +531,6 @@ behaviors = {
 # if berry is not on this list, it is bad
 good_berries = set(["orng", "red", "yellow", "pink"])
 
-
 #------------------CHANGE CODE ABOVE HERE ONLY--------------------------
 
 def main():
@@ -552,7 +540,7 @@ def main():
     timestep = int(robot.getBasicTimeStep())
     
     #health, energy, armour in that order 
-    robot_info = [100,100,0]
+    robot_info = [100, 100, 0]
     passive_wait(0.1, robot, timestep)
     pc = 0
     timer = 0
@@ -638,7 +626,6 @@ def main():
     gripper_init(robot)
     
     global LAST_BERRY_CONSUMED
-    global time_stump_seen
     
     i = 0
     j = 0
@@ -647,17 +634,19 @@ def main():
     previous_stats = robot_info 
     previous_direction = 0
     time_since_direction_change = 0
+    time_stump_seen = -50
            
 
     #------------------CHANGE CODE ABOVE HERE ONLY--------------------------
     
     
     while(robot_not_dead == 1):
-        
+        #check if health is empty
         if(robot_info[0] < 0):
-           
+            #if so, she dead
             robot_not_dead = 0
             print("ROBOT IS OUT OF HEALTH")
+            
             #if(zombieTest):
             #    print("TEST PASSED")
             #else:
@@ -665,25 +654,29 @@ def main():
             #robot.simulationQuit(20)
             #exit()
             
-        if(timer%2==0):
+        #check for berry and zombie presence, not every cc   
+        if(timer % 2 == 0):
             trans = trans_field.getSFVec3f()
             robot_info = check_berry_collision(robot_info, trans[0], trans[2], robot)
             robot_info = check_zombie_collision(robot_info, trans[0], trans[2], robot)
             
-        if(timer%16==0):
+        #every 2 sec        
+        if(timer % 16 == 0):
+            #update the 3 robot stats, and print them
             robot_info = update_robot(robot_info)
-            timer = 0
+            timer = 0 #reset clock
         
-        if(robot.step(timestep)==-1):
+        if(robot.step(timestep) == -1):
             exit()
             
-            
+        #increment clock
         timer += 1
         
      #------------------CHANGE CODE BELOW HERE ONLY--------------------------   
         #called every timestep
          
         i += 0.5
+        
         
         # get camera image
         imageRaw = camera1.getImage()
@@ -693,19 +686,13 @@ def main():
         # each pixel is repped by dist (m) from camera sensor plane
         range_image = rangeFinder.getRangeImageArray()
 
-        left_avg_depth = 0
-        right_avg_depth = 0
+        avg_depth = 0
         
         #compute avg depth (meters) in a 10x10 sample of middle of range image
-        for j in range(32):
+        for j in range(27, 37):
             for k in range(25, 35):
-                left_avg_depth += range_image[j][k]
-        for j in range(32, 64):
-            for k in range(25, 35):
-                right_avg_depth += range_image[j][k]
-        left_avg_depth /= 320
-        right_avg_depth /= 320
-        avg_depth = (left_avg_depth + right_avg_depth) / 2
+                avg_depth += range_image[j][k]
+        avg_depth /= 100
         
         # movement check to avoid getting stuck
         direction = compass.getValues()[1]
@@ -746,12 +733,10 @@ def main():
                     bad_berries.append(element) #if the berry is bad, treat it like a zombie
                 else:
                     berries.append(element) 
-            elif element.name == "wall" and avg_depth < 3.8:
+            elif element.name == "wall" and avg_depth < 3.7:
                 walls.append(element) #see a wall and are really close to something (avoid mistaking grey mtns for walls)
             elif element.name == "stump":
                 stumps.append(element)
-                
-        # print("zombies:", len(zombies), "berries:", len(berries), "walls:", len(walls), "stumps:", len(stumps))
         
         #if detected some berries, find "closest" one 
         if len(berries):
@@ -784,17 +769,17 @@ def main():
             base_forwards()
             time_stump_seen = i
         else:
-            # print("wandering")
+            #print("wandering")
             #DEFAULT WANDERING BEHAVIOR, GOT NOTHING BETTER TO DO
-            behaviors['wander'].output(i, walls, robot_info[0], robot_info[1], left_avg_depth, right_avg_depth)
+            behaviors['wander'].output(i, walls, robot_info[0], robot_info[1])
         
         
         previous_stats = robot_info.copy() #some memory for saving and comparing curr robot stats to previous
-         
+        
         #------------------CHANGE CODE ABOVE HERE ONLY--------------------------
         
         
-    return 0   
+    return 0
 
 
 main()
